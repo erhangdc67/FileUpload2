@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Assignment_Team.Controllers
@@ -42,7 +43,7 @@ namespace Assignment_Team.Controllers
             {
                 FileInfo _fileInfo = new FileInfo(file);
 
-                Info.Add(new FileInfomations { Path = _fileInfo.Name.ToString(),  Name = _fileInfo.Name, Lenght = _fileInfo.Length.ToString(), CreateDate = _fileInfo.CreationTime.ToString() });
+                Info.Add(new FileInfomations { Path = _fileInfo.Name.ToString(), Name = _fileInfo.Name, Lenght = _fileInfo.Length.ToString(), CreateDate = _fileInfo.CreationTime.ToString() });
             }
             return Json(Info);
         }
@@ -66,7 +67,7 @@ namespace Assignment_Team.Controllers
             {
                 return Json(false);
             }
-           
+
         }
 
         [HttpPost]
@@ -80,7 +81,56 @@ namespace Assignment_Team.Controllers
                 if (System.IO.File.Exists(Path.Combine(path, file)))
                 {
                     var currencyDetails = System.IO.File.ReadAllLines(Path.Combine(path, file));
-                    return Json("erhan message");
+                    currencyDetails = currencyDetails.Skip(1).ToArray();
+
+                    List<ResultModel> resultModels = new List<ResultModel>();
+                    List<ResultModelUI> resultUIModels = new List<ResultModelUI>();
+                    foreach (var item in currencyDetails)
+                    {
+                        string[] row = item.Split(",");
+
+                        DateTime fromDate = string.IsNullOrEmpty(row[2]) || !DateTime.TryParse(row[2], out fromDate) ? DateTime.Now : DateTime.Parse(row[2]);
+                        DateTime ToDate = string.IsNullOrEmpty(row[3]) || !DateTime.TryParse(row[3], out ToDate) ? DateTime.Now : DateTime.Parse(row[3]);
+
+                        resultModels.Add(new ResultModel()
+                        {
+                            EmpID = row[0],
+                            ProjectID = row[1],
+                            FromDate = fromDate,
+                            ToDate = ToDate
+                        });
+                    }
+
+
+                    var result = resultModels.GroupBy(l => new { l.ProjectID })
+                                  .Select(item => new { item.Key.ProjectID, item }).ToList();
+
+                    foreach (var loopItem in result)
+                    {
+                        var pair = new ResultModelUI();
+                        var row = loopItem.item.ToList();
+                        pair.EmpID1 = row.FirstOrDefault().EmpID;
+                        pair.EmpID2 = row.LastOrDefault().EmpID;
+                        pair.ProjectID= row.FirstOrDefault().ProjectID;
+
+
+                        bool overlap = row.FirstOrDefault().FromDate < row.LastOrDefault().ToDate && row.LastOrDefault().FromDate < row.FirstOrDefault().ToDate;
+
+                        double totalDays = default(double);
+                        if (overlap)
+                        {
+                            var maxDate = row.FirstOrDefault(f => f.FromDate == row.Max(m => m.FromDate).Date).FromDate;
+                            var minDate = row.FirstOrDefault(f => f.ToDate == row.Min(m => m.ToDate).Date) != null ? row.FirstOrDefault(f => f.ToDate == row.Min(m => m.ToDate).Date).ToDate : row.FirstOrDefault().ToDate;
+
+                            totalDays = (minDate - maxDate).Days;
+                        }
+
+                        pair.Days = totalDays.ToString();
+                        resultUIModels.Add(pair);
+                    }
+
+
+                    return Json(resultUIModels);
                 }
                 else
                     return Json(false);

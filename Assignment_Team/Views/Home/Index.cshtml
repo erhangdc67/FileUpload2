@@ -31,17 +31,36 @@
             });
     }
 
-
-
     function showItemData(data) {
-        alertify.success('Ok');
-        alertify
-            .alert("Sirma Solution Paır Of Employees", function () {
-                if (data != null && data != undefined && data.length > 0) {
-                    var table = $('resultTable').DataTable();
-                    table.data(data);
-                }
+        $('#exampleModalCenter').modal('show');
+        if (data != null && data != undefined && data.length > 0) {
+
+            var dataSet = new Array;
+            for (var i = 0; i < data.length; i++) {
+                var itemArray = [];
+                itemArray.push(data[i].empID1);
+                itemArray.push(data[i].empID2);
+                itemArray.push(data[i].projectID);
+                itemArray.push(data[i].days);
+
+                dataSet.push(itemArray);
+            }
+
+            if ($.fn.DataTable.isDataTable('#resultTable')) {
+                $('#resultTable').DataTable().destroy();
+            }
+
+            $('#resultTable').DataTable({
+                data: dataSet,
+                columns: [
+                    { title: "EmpID1" },
+                    { title: "EmpID2" },
+                    { title: "ProjectID" },
+                    { title: "Days" }
+                ]
             });
+
+        }
     }
     function showItem(item) {
         $.ajax({
@@ -108,15 +127,33 @@
     </table>
 </div>
 
-<div class="container">
-    <div>
+<!-- Modal -->
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Pair Of Employees</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div>
+                    </div>
+                    <table id="resultTable" class="table table-bordered table-striped mt-4">
+                        <thead>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
-    <table id="resultTable" class="table table-bordered table-striped mt-4">
-        <thead>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
 </div>
 
 
@@ -124,5 +161,4 @@
 {
     <script src="~/lib/datatables/js/jquery.dataTables.min.js"></script>
     <script src="~/lib/datatables/js/dataTables.bootstrap4.min.js"></script>
-
 }
